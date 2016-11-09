@@ -8,8 +8,8 @@
 #define MILKCOCOA_SERVERPORT    1883
 #define MAX_VAL 64 // 0 to 255 for brightness
 
-const char* ssid = "diversity";
-const char* password = "YdJ2QywuD2jaQFHLHj5PWBYjDRxRP8Lu";
+const char* ssid = "shanon";
+const char* password = "shanonim";
 const char MQTT_SERVER[] PROGMEM    = MILKCOCOA_APP_ID ".mlkcca.com";
 const char MQTT_CLIENTID[] PROGMEM  = __TIME__ MILKCOCOA_APP_ID;
 boolean connectedStatus = false;
@@ -26,8 +26,6 @@ Adafruit_NeoPixel pixel = Adafruit_NeoPixel(60, 12, NEO_GRB + NEO_KHZ800);
 // NEO_KHZ400  400 KHz bitstream (e.g. FLORA pixels)
 // NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip)
 
-int network_status_led = 14;
-int sw_led = 15;
 int sw_button = 16;
 int sw_status;
 int colorCode = 1;
@@ -37,33 +35,30 @@ extern "C" {
 }
 
 void setup() {
-    pinMode(network_status_led, OUTPUT);
-    pinMode(sw_led, OUTPUT);
     pinMode(sw_button, INPUT);
-    
+
     Serial.begin(115200);
-    
+
     // Connect to WiFi network
     Serial.println();
     Serial.print("Connecting to ");
     Serial.println(ssid);
-    
+
     WiFi.begin(ssid, password);
-    
+
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
     }
     Serial.println("");
     Serial.println("WiFi connected");
-    
+
     // Start the server
     server.begin();
     Serial.println("Server started");
-    
+
     // Print the IP address
     Serial.println(WiFi.localIP());
-    digitalWrite(14, HIGH);
 
     pixel.begin();
     pixel.show(); // Initialize all pixels to 'off'
@@ -74,17 +69,17 @@ void loop() {
         milkcocoa.loop();
         DataElement elem = DataElement();
         elem.setValue("status", "connected");
-        milkcocoa.push(MILKCOCOA_DATASTORE, &elem); 
+        milkcocoa.push(MILKCOCOA_DATASTORE, &elem);
         connectedStatus = true;
     }
 
     // switch status
     sw_status = digitalRead(sw_button);
 
+    setColor(colorCode);
     if (sw_status == 0) {
-        digitalWrite(sw_led, LOW);
+        // no-op
     } else {
-        digitalWrite(sw_led, HIGH);
         setColor(colorCode);
 
         colorCode++;
@@ -120,4 +115,3 @@ void setColor(uint16_t colorCode) {
             break;
     }
 }
-
