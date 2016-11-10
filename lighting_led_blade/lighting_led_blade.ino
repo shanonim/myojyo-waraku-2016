@@ -4,7 +4,8 @@
 #include <Adafruit_NeoPixel.h>
 
 #define MILKCOCOA_APP_ID    "hotiv4mwrqx"
-#define MILKCOCOA_DATASTORE "otaku_blade"
+#define MILKCOCOA_DATASTORE_NETWORK "network_status"
+#define MILKCOCOA_DATASTORE_COLOR "color"
 #define MILKCOCOA_SERVERPORT    1883
 #define MAX_VAL 64 // 0 to 255 for brightness
 
@@ -35,9 +36,9 @@ extern "C" {
 }
 
 void setup() {
-    pinMode(sw_button, INPUT);
-
     Serial.begin(115200);
+    // setup pins
+    pinMode(sw_button, INPUT);
 
     // Connect to WiFi network
     Serial.println();
@@ -45,7 +46,6 @@ void setup() {
     Serial.println(ssid);
 
     WiFi.begin(ssid, password);
-
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
@@ -69,7 +69,7 @@ void loop() {
         milkcocoa.loop();
         DataElement elem = DataElement();
         elem.setValue("status", "connected");
-        milkcocoa.push(MILKCOCOA_DATASTORE, &elem);
+        milkcocoa.push(MILKCOCOA_DATASTORE_NETWORK, &elem);
         connectedStatus = true;
     }
 
@@ -81,6 +81,7 @@ void loop() {
         // no-op
     } else {
         setColor(colorCode);
+        sendColorToMilkcocoa(colorCode);
 
         colorCode++;
         if (colorCode == 4) {
@@ -114,4 +115,11 @@ void setColor(uint16_t colorCode) {
             }
             break;
     }
+}
+
+void sendColorToMilkcocoa(uint16_t colorCode) {
+    milkcocoa.loop();
+    DataElement elem = DataElement();
+    elem.setValue("colorCode", colorCode);
+    milkcocoa.push(MILKCOCOA_DATASTORE_COLOR, &elem);
 }
