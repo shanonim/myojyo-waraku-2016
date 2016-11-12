@@ -14,7 +14,7 @@ const char* password = "kAzuhir0";
 const char MQTT_SERVER[] PROGMEM    = MILKCOCOA_APP_ID ".mlkcca.com";
 const char MQTT_CLIENTID[] PROGMEM  = __TIME__ MILKCOCOA_APP_ID;
 boolean connectedStatus = false;
-boolean pushStatus = false;
+int colorCode = 1;
 
 WiFiServer server(80);
 WiFiClient client;
@@ -28,18 +28,13 @@ Adafruit_NeoPixel pixel = Adafruit_NeoPixel(60, 12, NEO_GRB + NEO_KHZ800);
 // NEO_KHZ400  400 KHz bitstream (e.g. FLORA pixels)
 // NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip)
 
-int sw_button = 16;
-int sw_status;
-int colorCode = 1;
-
 extern "C" {
     #include "user_interface.h"
 }
 
+void onpush(DataElement *elem);
 void setup() {
     Serial.begin(115200);
-    // setup pins
-    pinMode(sw_button, INPUT);
 
     // Connect to WiFi network
     Serial.println();
@@ -63,6 +58,9 @@ void setup() {
 
     pixel.begin();
     pixel.show(); // Initialize all pixels to 'off'
+
+    // Milkcocoa
+    milkcocoa.on(MILKCOCOA_DATASTORE_COLOR, "push", onpush);
 }
 
 void loop() {
@@ -73,24 +71,13 @@ void loop() {
         milkcocoa.push(MILKCOCOA_DATASTORE_NETWORK, &elem);
         connectedStatus = true;
     }
+    milkcocoa.loop();
+}
 
-    // switch status
-    sw_status = digitalRead(sw_button);
-
-    if (sw_status == 0) {
-        // no-op
-    } else {
-        setColor(colorCode);
-
-        if (!pushStatus) {
-            sendColorToMilkcocoa(colorCode);
-        }
-
-        colorCode++;
-        if (colorCode == 4) {
-            colorCode = 1;
-        }
-    }
+void onpush(DataElement *elem) {
+    Serial.println(elem->getInt("colorCode"));
+    colorCode = elem->getInt("colorCode");
+    setColor(colorCode);
 }
 
 void setColor(uint16_t colorCode) {
@@ -102,7 +89,6 @@ void setColor(uint16_t colorCode) {
                 pixel.setPixelColor(i, pixel.Color(MAX_VAL, 0, 0));
                 pixel.show();
             }
-            pushStatus = false;
             break;
         case 2:
             // green
@@ -110,7 +96,6 @@ void setColor(uint16_t colorCode) {
                 pixel.setPixelColor(i, pixel.Color(0, MAX_VAL, 0));
                 pixel.show();
             }
-            pushStatus = false;
             break;
         case 3:
             // blue
@@ -118,16 +103,7 @@ void setColor(uint16_t colorCode) {
                 pixel.setPixelColor(i, pixel.Color(0, 0, MAX_VAL));
                 pixel.show();
             }
-            pushStatus = false;
             break;
     }
 }
 
-void sendColorToMilkcocoa(uint16_t colorCode) {
-    milkcocoa.loop();
-    DataElement elem = DataElement();
-    elem.setValue("colorCode", colorCode);
-    milkcocoa.push(MILKCOCOA_DATASTORE_COLOR, &elem);
-
-    pushStatus = true;
-}
